@@ -1,17 +1,33 @@
-import { base44 } from './base44Client';
+import { getBase44 } from './base44Client';
 
+function createLazyEntityProxy(entityName) {
+  return new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        return async (...args) => {
+          const client = await getBase44();
+          return client.entities[entityName][prop](...args);
+        };
+      },
+    }
+  );
+}
 
-export const Member = base44.entities.Member;
+export const Member = createLazyEntityProxy('Member');
+export const Class = createLazyEntityProxy('Class');
+export const Attendance = createLazyEntityProxy('Attendance');
+export const Equipment = createLazyEntityProxy('Equipment');
+export const Payment = createLazyEntityProxy('Payment');
 
-export const Class = base44.entities.Class;
-
-export const Attendance = base44.entities.Attendance;
-
-export const Equipment = base44.entities.Equipment;
-
-export const Payment = base44.entities.Payment;
-
-
-
-// auth sdk:
-export const User = base44.auth;
+export const User = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      return async (...args) => {
+        const client = await getBase44();
+        return client.auth[prop](...args);
+      };
+    },
+  }
+);

@@ -1,8 +1,16 @@
 "use client";
 import * as React from "react"
-import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
+
+// Lazy-load Recharts primitives to avoid pulling them into the initial bundle
+let RechartsPrimitivePromise;
+async function loadRecharts() {
+  if (!RechartsPrimitivePromise) {
+    RechartsPrimitivePromise = import("recharts");
+  }
+  return RechartsPrimitivePromise;
+}
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = {
@@ -26,6 +34,25 @@ const ChartContainer = React.forwardRef(({ id, className, children, config, ...p
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
+  const [Recharts, setRecharts] = React.useState(null)
+  React.useEffect(() => {
+    loadRecharts().then(setRecharts)
+  }, [])
+
+  if (!Recharts) {
+    return (
+      <div
+        data-chart={chartId}
+        ref={ref}
+        className={cn("flex aspect-video justify-center text-xs", className)}
+        {...props}
+      >
+        <ChartStyle id={chartId} config={config} />
+        <div className="flex items-center justify-center text-muted-foreground">Loading chart…</div>
+      </div>
+    )
+  }
+
   return (
     (<ChartContext.Provider value={{ config }}>
       <div
@@ -37,9 +64,9 @@ const ChartContainer = React.forwardRef(({ id, className, children, config, ...p
         )}
         {...props}>
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        <Recharts.ResponsiveContainer>
           {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        </Recharts.ResponsiveContainer>
       </div>
     </ChartContext.Provider>)
   );
@@ -77,7 +104,16 @@ return color ? `  --color-${key}: ${color};` : null
   );
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip
+// Lazily export tooltip alias after recharts is loaded
+const ChartTooltip = (props) => {
+  const [Recharts, setRecharts] = React.useState(null)
+  React.useEffect(() => {
+    loadRecharts().then(setRecharts)
+  }, [])
+  if (!Recharts) return null
+  const Component = Recharts.Tooltip
+  return <Component {...props} />
+}
 
 const ChartTooltipContent = React.forwardRef((
   {

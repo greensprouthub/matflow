@@ -2,12 +2,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  CreditCard, 
-  Package, 
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  CreditCard,
+  Package,
   BarChart3,
   Menu,
   X,
@@ -33,11 +33,13 @@ const navigationItems = [
     title: "Dashboard",
     url: createPageUrl("Dashboard"),
     icon: LayoutDashboard,
+    prefetch: () => import("./Dashboard"),
   },
   {
     title: "Members",
     url: createPageUrl("Members"),
     icon: Users,
+    prefetch: () => import("./Members"),
   },
   {
     title: "Classes",
@@ -108,7 +110,7 @@ export default function Layout({ children, currentPageName }) {
                             : 'text-slate-600'
                         }`}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                        <Link to={item.url} className="flex items-center gap-3 px-4 py-3" onMouseEnter={item.prefetch}>
                           <item.icon className="w-5 h-5" />
                           <span className="font-medium">{item.title}</span>
                         </Link>

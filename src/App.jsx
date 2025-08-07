@@ -1,11 +1,14 @@
+import React, { Suspense, lazy } from 'react'
 import './App.css'
-import Pages from "@/pages/index.jsx"
-import { Toaster } from "@/components/ui/toaster"
+const Pages = lazy(() => import('@/pages/index.jsx'))
+import { Toaster } from '@/components/ui/toaster'
 
 function App() {
   return (
     <>
-      <Pages />
+      <Suspense fallback={<div className="p-6">Loading…</div>}>
+        <Pages />
+      </Suspense>
       <Toaster />
     </>
   )

@@ -42,19 +42,21 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Load members
-      const members = await Member.list();
-      const activeMembers = members.filter(m => m.membership_status === 'active');
-      const pastDueMembers = members.filter(m => m.membership_status === 'past_due');
-      
-      // Load today's classes
       const today = format(new Date(), 'yyyy-MM-dd');
-      const todayClasses = await Class.filter({ date: today });
-      
-      // Load this month's payments
       const startMonth = format(startOfMonth(new Date()), 'yyyy-MM-dd');
       const endMonth = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-      const payments = await Payment.list();
+      const last30Days = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+
+      const [members, todayClasses, payments, recentAttendance] = await Promise.all([
+        Member.list(),
+        Class.filter({ date: today }),
+        Payment.list(),
+        Attendance.list(),
+      ]);
+
+      const activeMembers = members.filter(m => m.membership_status === 'active');
+      const pastDueMembers = members.filter(m => m.membership_status === 'past_due');
+
       const monthlyPayments = payments.filter(p => 
         p.payment_date >= startMonth && 
         p.payment_date <= endMonth &&
@@ -62,9 +64,6 @@ export default function Dashboard() {
       );
       const monthlyRevenue = monthlyPayments.reduce((sum, p) => sum + p.amount, 0);
 
-      // Calculate attendance rate (last 30 days)
-      const last30Days = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-      const recentAttendance = await Attendance.list();
       const recentAttendanceCount = recentAttendance.filter(a => a.check_in_time >= last30Days).length;
       const totalPossibleAttendance = activeMembers.length * 12; // Assume 3 classes per week
       const attendanceRate = totalPossibleAttendance > 0 ? (recentAttendanceCount / totalPossibleAttendance) * 100 : 0;
@@ -78,10 +77,7 @@ export default function Dashboard() {
         pastDueMembers: pastDueMembers.length
       });
 
-      // Generate alerts
       const newAlerts = [];
-      
-      // Past due payments
       if (pastDueMembers.length > 0) {
         newAlerts.push({
           type: 'warning',
@@ -92,7 +88,6 @@ export default function Dashboard() {
         });
       }
 
-      // Low attendance members
       const lowAttendanceMembers = members.filter(m => {
         const daysSinceLastAttendance = m.last_attendance_date 
           ? Math.floor((new Date() - new Date(m.last_attendance_date)) / (1000 * 60 * 60 * 24))
@@ -112,7 +107,6 @@ export default function Dashboard() {
 
       setAlerts(newAlerts);
 
-      // Recent activity (mock for now)
       setRecentActivity([
         { type: 'check_in', message: 'John Silva checked in to Fundamentals', time: '2 minutes ago' },
         { type: 'payment', message: 'Sarah Johnson paid monthly dues ($150)', time: '1 hour ago' },
