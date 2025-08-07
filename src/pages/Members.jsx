@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Member } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import {
 import { format } from "date-fns";
 
 import MemberCard from "../components/members/MemberCard";
-import MemberForm from "../components/members/MemberForm";
+const MemberForm = lazy(() => import("../components/members/MemberForm"));
 import MemberFilters from "../components/members/MemberFilters";
 
 export default function Members() {
@@ -204,14 +204,16 @@ export default function Members() {
 
         {/* Add/Edit Member Form */}
         {showAddForm && (
-          <MemberForm
-            member={selectedMember}
-            onSave={handleSaveMember}
-            onCancel={() => {
-              setShowAddForm(false);
-              setSelectedMember(null);
-            }}
-          />
+          <Suspense fallback={<div className="p-4">Loading form…</div>}>
+            <MemberForm
+              member={selectedMember}
+              onSave={handleSaveMember}
+              onCancel={() => {
+                setShowAddForm(false);
+                setSelectedMember(null);
+              }}
+            />
+          </Suspense>
         )}
 
         {/* Members Grid */}
